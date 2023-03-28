@@ -2,26 +2,33 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
+app.use(express.json());
+
 // Підключення до БД
 const Pool = require('pg').Pool
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'users',
-  password: '0808',
-  port: 5432
+  user: 'ukd_admin',
+  host: 'ep-square-mouse-262994.us-west-2.aws.neon.tech',
+  database: 'ukd',
+  password: 'YyfeQqL0W8uS',
+  port: 5432,
+  ssl: true
 })
 
 app.get('/', (req, res) => {
-  res.send('Hi')
-})
+  pool.query('SELECT * FROM "tasks"', (error, results) => {
+    if (error) throw error
+
+    res.status(200).json(results.rows)
+  })
+});
 
 app.post('/students', (req, res) => {
-  const { name, email } = req.body;
+  const { first_name, last_name, age } = req.body;
 
   pool.query(
-    'INSERT INTO students (name, email) VALUES ($1, $2)',
-    [name, email],
+    'INSERT INTO students (first_name, last_name, age) VALUES ($1, $2, $3)',
+    [first_name, last_name, age],
     (error, results) => {
       if (error) {
         res.status(500).send(error.message);
@@ -33,11 +40,11 @@ app.post('/students', (req, res) => {
 });
 
 app.post('/tasks', (req, res) => {
-  const { title, description, student_id, subject_id } = req.body;
+  const { student_id, description, mark, subject_id } = req.body;
 
   pool.query(
-    'INSERT INTO tasks (title, description, student_id, subject_id) VALUES ($1, $2, $3, $4)',
-    [title, description, student_id, subject_id],
+    'INSERT INTO tasks (student_id, description, mark, subject_id) VALUES ($1, $2, $3, $4)',
+    [student_id, description, mark, subject_id],
     (error, results) => {
       if (error) {
         res.status(500).send(error.message);
@@ -50,7 +57,11 @@ app.post('/tasks', (req, res) => {
 
 app.get('/students/tasks', (req, res) => {
   pool.query(
-    'SELECT students.id, students.name, students.email, tasks.id as task_id, tasks.title as task_title, tasks.description as task_description, subjects.name as subject_name FROM students LEFT JOIN tasks ON students.id = tasks.student_id LEFT JOIN subjects ON tasks.subject_id = subjects.id ORDER BY students.id',
+    `SELECT students.id, students.first_name, students.last_name, students.age, tasks.id AS task_id, tasks.description as task_description, tasks.mark as task_mark, subjects.name as subject_name
+    FROM students
+    LEFT JOIN tasks ON students.id = tasks.student_id
+    LEFT JOIN subjects ON tasks.subject_id = subjects.id
+    ORDER BY students.id`,
     (error, results) => {
       if (error) {
         res.status(500).send(error.message);
@@ -63,8 +74,9 @@ app.get('/students/tasks', (req, res) => {
           if (!student) {
             students.push({
               id: row.id,
-              name: row.name,
-              email: row.email,
+              first_name: row.first_name,
+              last_name: row.last_name,
+              age: row.age,
               tasks: [],
             });
           }
@@ -72,8 +84,8 @@ app.get('/students/tasks', (req, res) => {
           if (row.task_id) {
             students[students.length - 1].tasks.push({
               id: row.task_id,
-              title: row.task_title,
               description: row.task_description,
+              mark: row.task_mark,
               subject_name: row.subject_name,
             });
           }
