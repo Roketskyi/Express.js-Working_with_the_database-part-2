@@ -4,7 +4,7 @@ const port = 3000;
 
 app.use(express.json());
 
-// Підключення до БД
+// Підключення до БД | Завдання 0
 const Pool = require('pg').Pool
 const pool = new Pool({
   user: 'ukd_admin',
@@ -23,6 +23,7 @@ app.get('/', (req, res) => {
   })
 });
 
+// Створити APi-endpoint для додавання записів у табличку students | Завдання 1
 app.post('/students', (req, res) => {
   const { first_name, last_name, age } = req.body;
 
@@ -39,6 +40,7 @@ app.post('/students', (req, res) => {
   );
 });
 
+// Створити APi-endpoint для додавання у табличку tasks з прив'язкою до студента і предмету | Завдання 2
 app.post('/tasks', (req, res) => {
   const { student_id, description, mark, subject_id } = req.body;
 
@@ -55,7 +57,8 @@ app.post('/tasks', (req, res) => {
   );
 });
 
-app.get('/students/tasks', (req, res) => {
+// Створити APi-endpoint для отримання списку студентів з таблиці students з приєднаними до них списками завдань з таблиці tasks | Завдання 3
+app.get('/join', (req, res) => {
   pool.query(
     `SELECT students.id, students.first_name, students.last_name, students.age, tasks.id AS task_id, tasks.description as task_description, tasks.mark as task_mark, subjects.name as subject_name
     FROM students
