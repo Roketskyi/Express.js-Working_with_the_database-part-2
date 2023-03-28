@@ -100,6 +100,29 @@ app.get('/join', (req, res) => {
   );
 });
 
+// Створити APi-endpoint для отримання одного предмету за id з таблиці subjects з приєднаним до нього списком завдань з таблиці tasks | Завдання *
+app.get('/subjects/:id', (req, res) => {
+  const subjectId = req.params.id;
+
+  pool.query(`SELECT * FROM subjects WHERE id = $1`,
+  [subjectId], 
+    (error, subjectResults) => {
+      if (error || !subjectResults.rows.length) {
+        res.status(404).send('Subject not found');
+      } else {
+        pool.query(`SELECT * FROM tasks WHERE subject_id = $1`, [subjectId], 
+          (error, taskResults) => {
+            if (error) {
+              res.status(500).send(error.message);
+            } else {        
+              const subjectWithTasks = { ...subjectResults.rows[0], tasks: taskResults.rows };
+              
+              res.send(subjectWithTasks);
+            }
+          });
+      }
+    });
+});
 
 app.listen(port, () => {
   console.log(`Веб-сервер був запущений за наступним посиланням: http://localhost:${port}/`);
